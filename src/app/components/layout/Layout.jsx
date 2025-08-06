@@ -1,9 +1,10 @@
 import Header from './Header'
 import { motion } from 'framer-motion'
+import { GridBackgroundPage } from '../ui/grid-background'
 
 export default function Layout({ children, onNewEntry }) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <GridBackgroundPage>
       <Header onNewEntry={onNewEntry} />
       <motion.main
         initial={{ opacity: 0 }}
@@ -13,6 +14,6 @@ export default function Layout({ children, onNewEntry }) {
       >
         {children}
       </motion.main>
-    </div>
+    </GridBackgroundPage>
   )
 }

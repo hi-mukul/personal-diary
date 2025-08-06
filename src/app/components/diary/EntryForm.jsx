@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
 import useDiaryStore from '../../hooks/useDiary'
 import { FiPlus, FiX } from 'react-icons/fi'
+import { Button } from '../ui/moving-border'
 
 export default function EntryForm({ entry, onSuccess }) {
   const { user } = useAuth()
@@ -97,15 +98,15 @@ export default function EntryForm({ entry, onSuccess }) {
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
             placeholder="Add a tag..."
           />
-          <motion.button
+          <Button
             type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             onClick={addTag}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            borderRadius="0.5rem"
+            className="bg-blue-600 dark:bg-blue-700 text-white border-blue-400 dark:border-blue-600"
+            containerClassName="w-10 h-10"
           >
             <FiPlus />
-          </motion.button>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {tags.map((tag, index) => (
@@ -129,24 +130,24 @@ export default function EntryForm({ entry, onSuccess }) {
       </div>
 
       <div className="flex gap-3">
-        <motion.button
+        <Button
           type="submit"
           disabled={loading}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex-1 py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          borderRadius="0.75rem"
+          className="bg-green-600 dark:bg-green-700 text-white border-green-400 dark:border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          containerClassName="flex-1 h-12"
         >
           {loading ? 'Saving...' : (entry ? 'Update Entry' : 'Create Entry')}
-        </motion.button>
-        <motion.button
+        </Button>
+        <Button
           type="button"
           onClick={onSuccess}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition-colors duration-200"
+          borderRadius="0.75rem"
+          className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          containerClassName="w-24 h-12"
         >
           Cancel
-        </motion.button>
+        </Button>
       </div>
     </form>
   )

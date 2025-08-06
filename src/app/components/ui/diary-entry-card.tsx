@@ -31,10 +31,10 @@ export function DiaryEntryCard({
           variant="default"
           movementDuration={1.5}
         />
-        
+
         {/* Glassmorphism background */}
         <div className="relative h-full overflow-hidden rounded-xl bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 shadow-lg dark:shadow-[0px_0px_27px_0px_#2D2D2D] border border-white/20 dark:border-gray-700/30">
-          
+
           {/* Delete button */}
           {onDelete && (
             <button
@@ -53,7 +53,7 @@ export function DiaryEntryCard({
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight">
                 {title}
               </h3>
-              
+
               {/* Content preview */}
               <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 leading-relaxed">
                 {content}
@@ -102,9 +102,9 @@ export function DiaryEntryCardsDemo() {
     <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-          My Diary Entries
+          My DivineLog Entries
         </h1>
-        
+
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sampleEntries.map((entry, index) => (
             <DiaryEntryCard

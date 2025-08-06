@@ -1,28 +1,34 @@
 'use client';
 
 import { DiaryCard } from '../components/diary/DiaryCard';
+import { GridBackgroundPage } from '../components/ui/grid-background';
+import { Button } from '../components/ui/moving-border';
 
 export default function DemoPage() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto">
+    <GridBackgroundPage>
+      <div className="max-w-7xl mx-auto p-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Diary App Features
+            DivineLog Features
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
             Discover the powerful features that make journaling a delightful experience
           </p>
         </div>
-        
+
         <DiaryCard />
-        
+
         <div className="mt-12 text-center">
-          <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+          <Button
+            borderRadius="0.75rem"
+            className="bg-blue-600 dark:bg-blue-700 text-white border-blue-400 dark:border-blue-600"
+            containerClassName="w-48 h-12"
+          >
             Start Your Journey
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </GridBackgroundPage>
   );
 }

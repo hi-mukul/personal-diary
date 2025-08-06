@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
+import { Button } from '../ui/moving-border'
 
 export default function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -82,15 +83,15 @@ export default function AuthForm() {
             </div>
           </div>
           
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            borderRadius="0.75rem"
+            className={`${isSignUp ? 'bg-purple-600 dark:bg-purple-700 border-purple-400 dark:border-purple-600' : 'bg-green-600 dark:bg-green-700 border-green-400 dark:border-green-600'} text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+            containerClassName="w-full h-12"
           >
             {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
-          </motion.button>
+          </Button>
         </form>
         
         <div className="mt-6 text-center">

@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Diary App",
-  description: "A personal diary application",
+  title: "DivineLog",
+  description: "Your divine personal journal application",
 };
 
 export default function RootLayout({

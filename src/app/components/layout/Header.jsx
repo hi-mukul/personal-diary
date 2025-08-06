@@ -1,10 +1,7 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
 import { FiLogOut, FiPlus, FiBook } from 'react-icons/fi'
-import ThemeToggle from '../ui/ThemeToggle'
 import SearchBar from '../ui/SearchBar'
-import EntryModal from '../diary/EntryModal'
+import { SmoothButton } from '../ui/smooth-button'
 
 export default function Header({ onNewEntry }) {
   const { user, signOut } = useAuth()
@@ -17,33 +14,30 @@ export default function Header({ onNewEntry }) {
             <div className="flex items-center gap-3">
               <FiBook className="text-primary-600 dark:text-primary-400" size={28} />
               <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-                My Diary
+                DivineLog
               </h1>
             </div>
 
             <div className="flex items-center gap-4">
               <SearchBar />
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <SmoothButton
                 onClick={onNewEntry}
-                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                variant="primary"
+                size="md"
               >
-                <FiPlus />
+                <FiPlus size={16} />
                 <span className="hidden sm:inline">New Entry</span>
-              </motion.button>
+              </SmoothButton>
 
-              <ThemeToggle />
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <SmoothButton
                 onClick={signOut}
-                className="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                variant="danger"
+                size="md"
               >
-                <FiLogOut size={20} />
-              </motion.button>
+                <FiLogOut size={16} />
+                <span>Logout</span>
+              </SmoothButton>
             </div>
           </div>
         </div>
