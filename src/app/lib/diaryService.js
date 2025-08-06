@@ -3,58 +3,94 @@ import { supabase } from './supabaseClient'
 export const diaryService = {
   // Create entry
   async createEntry(entry) {
-    const { data, error } = await supabase
-      .from('diary_entries')
-      .insert([entry])
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .insert([entry])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Supabase create error:', error)
+        throw new Error(`Failed to create entry: ${error.message || 'Unknown error'}`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('DiaryService createEntry error:', error)
+      throw error
+    }
   },
 
   // Get all entries
   async getEntries(userId, searchTerm = '', tags = []) {
-    let query = supabase
-      .from('diary_entries')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+    try {
+      let query = supabase
+        .from('diary_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
 
-    if (searchTerm) {
-      query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+      if (searchTerm) {
+        query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+      }
+
+      if (tags.length > 0) {
+        query = query.contains('tags', tags)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Supabase query error:', error)
+        throw new Error(`Database error: ${error.message || 'Unknown error'}`)
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('DiaryService getEntries error:', error)
+      throw error
     }
-
-    if (tags.length > 0) {
-      query = query.contains('tags', tags)
-    }
-
-    const { data, error } = await query
-    if (error) throw error
-    return data
   },
 
   // Update entry
   async updateEntry(id, updates) {
-    const { data, error } = await supabase
-      .from('diary_entries')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const { data, error } = await supabase
+        .from('diary_entries')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Supabase update error:', error)
+        throw new Error(`Failed to update entry: ${error.message || 'Unknown error'}`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('DiaryService updateEntry error:', error)
+      throw error
+    }
   },
 
   // Delete entry
   async deleteEntry(id) {
-    const { error } = await supabase
-      .from('diary_entries')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    try {
+      const { error } = await supabase
+        .from('diary_entries')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('Supabase delete error:', error)
+        throw new Error(`Failed to delete entry: ${error.message || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('DiaryService deleteEntry error:', error)
+      throw error
+    }
   },
 
   // Subscribe to changes

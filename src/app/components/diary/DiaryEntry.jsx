@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
-import ReactMarkdown from 'react-markdown'
+// Remove this line: import ReactMarkdown from 'react-markdown'
 import { FiEdit2, FiTrash2, FiCalendar, FiTag } from 'react-icons/fi'
 import useDiaryStore from '../../hooks/useDiary'
 import EntryModal from './EntryModal'
 
-export default function DiaryEntry({ entry }) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function DiaryEntry({ entry, onEdit }) {
   const [isDeleting, setIsDeleting] = useState(false)
   const { deleteEntry } = useDiaryStore()
 
-  const handleDelete = async () => {
+  const handleDelete = async (e) => {
+    e.stopPropagation();
     setIsDeleting(true)
     await deleteEntry(entry.id)
   }
@@ -25,6 +25,7 @@ export default function DiaryEntry({ entry }) {
         exit={{ opacity: 0, scale: 0.9 }}
         whileHover={{ y: -4 }}
         className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 cursor-pointer transition-all"
+        onClick={onEdit}
       >
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -36,18 +37,7 @@ export default function DiaryEntry({ entry }) {
               whileTap={{ scale: 0.9 }}
               onClick={(e) => {
                 e.stopPropagation()
-                setIsEditing(true)
-              }}
-              className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors"
-            >
-              <FiEdit2 size={18} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDelete()
+                handleDelete(e)
               }}
               disabled={isDeleting}
               className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-colors disabled:opacity-50"
@@ -57,8 +47,11 @@ export default function DiaryEntry({ entry }) {
           </div>
         </div>
 
+        {/* Replace ReactMarkdown with plain text */}
         <div className="prose prose-sm dark:prose-invert max-w-none mb-4">
-          <ReactMarkdown>{entry.content.substring(0, 200)}...</ReactMarkdown>
+          <p className="text-gray-700 dark:text-gray-300">
+            {entry.content.substring(0, 200)}...
+          </p>
         </div>
 
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
@@ -83,15 +76,6 @@ export default function DiaryEntry({ entry }) {
           )}
         </div>
       </motion.div>
-
-      <AnimatePresence>
-        {isEditing && (
-          <EntryModal
-            entry={entry}
-            onClose={() => setIsEditing(false)}
-          />
-        )}
-      </AnimatePresence>
     </>
   )
 }

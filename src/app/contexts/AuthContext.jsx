@@ -1,11 +1,19 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
-import { supabase } from '../lib/supabaseClient'
-import toast from 'react-hot-toast'
+'use client';
 
-const AuthContext = createContext({})
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../lib/supabaseClient';
+import toast from 'react-hot-toast';
 
-export const useAuth = () => useContext(AuthContext)
+const AuthContext = createContext({
+  user: null,
+  loading: true,
+  signIn: async () => {},
+  signUp: async () => {},
+  signOut: async () => {},
+});
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
@@ -26,9 +34,9 @@ export const AuthProvider = ({ children }) => {
         setLoading(false)
         
         if (event === 'SIGNED_IN') {
-          router.push('/dashboard')
+          router.push('/')
         } else if (event === 'SIGNED_OUT') {
-          router.push('/login')
+          router.push('/')
         }
       }
     )
@@ -52,12 +60,18 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       })
       if (error) throw error
-      toast.success('Check your email for confirmation!')
+
+      // Check if user needs email confirmation
+      if (data?.user && !data?.session) {
+        toast.success('Check your email for confirmation!')
+      } else if (data?.session) {
+        toast.success('Account created successfully!')
+      }
     } catch (error) {
       toast.error(error.message)
       throw error
