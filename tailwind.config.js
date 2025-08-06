@@ -11,6 +11,12 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
       },
+      letterSpacing: {
+        '4': '-0.04em',
+      },
+      borderWidth: {
+        '0.75': '0.75px',
+      },
       colors: {
         primary: {
           50: '#eff6ff',
@@ -27,5 +33,7 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 }
