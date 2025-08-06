@@ -6,7 +6,7 @@ import DiaryEntry from './DiaryEntry'
 
 export default function DiaryList({ onEditEntry }) {
   const { user } = useAuth()
-  const { entries, loading, fetchEntries, subscribeToChanges } = useDiaryStore()
+  const { entries, loading, error, fetchEntries, subscribeToChanges } = useDiaryStore()
 
   useEffect(() => {
     if (user) {

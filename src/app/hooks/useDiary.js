@@ -34,6 +34,8 @@ const useDiaryStore = create((set, get) => ({
       // Check if it's a table not found error
       if (error?.code === 'PGRST116' ||
         error?.message?.includes('relation "diary_entries" does not exist') ||
+        error?.message?.includes('Could not find the table') ||
+        error?.message?.includes('schema cache') ||
         error?.message?.includes('404') ||
         error?.status === 404) {
         const errorMsg = 'Database table not found. Please set up the database first.'

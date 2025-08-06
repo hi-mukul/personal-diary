@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion'
 import { FiSun, FiMoon } from 'react-icons/fi'
 import { useTheme } from '../../contexts/ThemeContext'

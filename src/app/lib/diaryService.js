@@ -42,7 +42,21 @@ export const diaryService = {
       const { data, error } = await query
 
       if (error) {
-        console.error('Supabase query error:', error)
+        console.error('Supabase query error:', {
+          code: error?.code,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+          status: error?.status
+        })
+
+        // Check for table not found errors
+        if (error.message?.includes('Could not find the table') ||
+          error.message?.includes('schema cache') ||
+          error.code === 'PGRST116') {
+          throw new Error(`Table not found: The diary_entries table doesn't exist. Please create it in your Supabase dashboard.`)
+        }
+
         throw new Error(`Database error: ${error.message || 'Unknown error'}`)
       }
 
