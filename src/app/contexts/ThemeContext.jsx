@@ -2,7 +2,10 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-const ThemeContext = createContext({})
+const ThemeContext = createContext({
+  theme: 'light',
+  toggleTheme: () => {}
+})
 
 export const useTheme = () => useContext(ThemeContext)
 
@@ -12,15 +15,19 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     setMounted(true)
-    const savedTheme = localStorage.getItem('theme') || 'light'
-    setTheme(savedTheme)
+
+    // Get saved theme or detect system preference
+    const savedTheme = localStorage.getItem('theme')
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    const initialTheme = savedTheme || systemTheme
+
+    setTheme(initialTheme)
 
     // Apply theme to document
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    document.documentElement.classList.remove('light', 'dark')
+    document.documentElement.classList.add(initialTheme)
+
+
   }, [])
 
   const toggleTheme = () => {
@@ -29,11 +36,10 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem('theme', newTheme)
 
     // Apply theme to document
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    document.documentElement.classList.remove('light', 'dark')
+    document.documentElement.classList.add(newTheme)
+
+
   }
 
   // Prevent hydration mismatch

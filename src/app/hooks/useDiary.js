@@ -8,9 +8,27 @@ const useDiaryStore = create((set, get) => ({
   error: null,
   searchTerm: '',
   selectedTags: [],
+  currentUser: null,
 
-  setSearchTerm: (term) => set({ searchTerm: term }),
-  setSelectedTags: (tags) => set({ selectedTags: tags }),
+  setSearchTerm: (term) => {
+    set({ searchTerm: term })
+    // Automatically refetch entries when search term changes
+    const { fetchEntries } = get()
+    const user = get().currentUser
+    if (user) {
+      fetchEntries(user.id)
+    }
+  },
+  setSelectedTags: (tags) => {
+    set({ selectedTags: tags })
+    // Automatically refetch entries when tags change
+    const { fetchEntries } = get()
+    const user = get().currentUser
+    if (user) {
+      fetchEntries(user.id)
+    }
+  },
+  setCurrentUser: (user) => set({ currentUser: user }),
 
   fetchEntries: async (userId) => {
     set({ loading: true, error: null })

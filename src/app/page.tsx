@@ -7,8 +7,7 @@ import Layout from './components/layout/Layout';
 import DiaryList from './components/diary/DiaryList';
 import EntryModal from './components/diary/EntryModal';
 import AuthForm from './components/auth/AuthForm';
-import DatabaseDebug from './components/debug/DatabaseDebug';
-import DatabaseSetup from './components/setup/DatabaseSetup';
+
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -43,12 +42,6 @@ export default function Home() {
 
   return (
     <Layout onNewEntry={() => openModal()}>
-      {/* Temporary setup components - remove after database is working */}
-      <div className="space-y-4 mb-6">
-        <DatabaseSetup />
-        <DatabaseDebug />
-      </div>
-
       <DiaryList onEditEntry={openModal} />
       <AnimatePresence>
         {isModalOpen && (
