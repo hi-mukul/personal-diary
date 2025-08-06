@@ -10,6 +10,7 @@ const AuthContext = createContext({
   loading: true,
   signIn: async () => {},
   signUp: async () => {},
+  signInWithGoogle: async () => {},
   signOut: async () => {},
 });
 
@@ -78,6 +79,21 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+      if (error) throw error
+    } catch (error) {
+      toast.error(error.message)
+      throw error
+    }
+  }
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -92,6 +108,7 @@ export const AuthProvider = ({ children }) => {
     user,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     loading,
   }
