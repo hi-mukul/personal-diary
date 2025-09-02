@@ -51,11 +51,11 @@ export default function DiaryEntry({ entry, onEdit }) {
             </div>
 
             <div className="space-y-3">
-              <h3 className="-tracking-4 pt-0.5 font-sans text-xl/[1.375rem] font-semibold text-balance text-black md:text-2xl/[1.875rem] dark:text-white">
-                {entry.title}
+              <h3 className="-tracking-4 pt-0.5 font-sans text-xl/[1.375rem] font-semibold text-balance text-black md:text-2xl/[1.875rem] dark:text-white" title={entry.title || 'Untitled Entry'}>
+                {(entry.title || 'Untitled Entry').length > 50 ? `${(entry.title || 'Untitled Entry').substring(0, 50)}...` : (entry.title || 'Untitled Entry')}
               </h3>
               <p className="font-sans text-sm/[1.125rem] text-black md:text-base/[1.375rem] dark:text-neutral-400 [&_b]:md:font-semibold [&_strong]:md:font-semibold">
-                {entry.content.substring(0, 150)}...
+                {(entry.content || 'No content available').substring(0, 150)}...
               </p>
             </div>
 
@@ -63,7 +63,7 @@ export default function DiaryEntry({ entry, onEdit }) {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <FiCalendar size={14} />
-                <span>{format(new Date(entry.created_at), 'MMM dd, yyyy')}</span>
+                <span>{format(new Date(entry.updated_at || entry.created_at), 'MMM dd, yyyy')}</span>
               </div>
               {entry.tags && entry.tags.length > 0 && (
                 <div className="flex items-center gap-2">

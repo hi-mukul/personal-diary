@@ -27,13 +27,15 @@ export default function EntryForm({ entry, onSuccess }) {
         user_id: user.id
       }
 
+      let result;
       if (entry) {
-        await updateEntry(entry.id, data)
+        result = await updateEntry(entry.id, data)
       } else {
-        await createEntry(data)
+        result = await createEntry(data)
       }
-      
-      onSuccess()
+
+      // Pass the updated/created entry back to the parent
+      onSuccess(result)
     } catch (error) {
       console.error(error)
     } finally {

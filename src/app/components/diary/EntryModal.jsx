@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { FiX } from 'react-icons/fi'
 import EntryForm from './EntryForm'
 
-export default function EntryModal({ entry, onClose }) {
+export default function EntryModal({ entry, onClose, onSuccess }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -53,7 +53,7 @@ export default function EntryModal({ entry, onClose }) {
 
         {/* Content */}
         <div className="relative p-8 overflow-y-auto max-h-[calc(90vh-120px)] custom-scrollbar">
-          <EntryForm entry={entry} onSuccess={onClose} />
+          <EntryForm entry={entry} onSuccess={onSuccess || onClose} />
         </div>
       </motion.div>
     </motion.div>

@@ -31,6 +31,13 @@ if (typeof window !== 'undefined' && (!supabaseUrl || !supabaseAnonKey || !isVal
   console.error(
     'Missing or invalid Supabase environment variables. Please check your .env.local file and ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set with valid values.'
   )
+  // Show a user-friendly error in the UI instead of throwing
+  if (typeof document !== 'undefined') {
+    const errorMessage = document.createElement('div')
+    errorMessage.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ef4444;color:white;padding:1rem;text-align:center;z-index:9999;'
+    errorMessage.innerHTML = '⚠️ Database connection not configured. Please check the setup guide.'
+    document.body.appendChild(errorMessage)
+  }
 }
 
 export const supabase = createClient(finalUrl, finalKey, {

@@ -29,7 +29,7 @@ export const diaryService = {
         .from('diary_entries')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
 
       if (searchTerm) {
         query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
@@ -70,9 +70,15 @@ export const diaryService = {
   // Update entry
   async updateEntry(id, updates) {
     try {
+      // Add updated_at timestamp
+      const updatesWithTimestamp = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+
       const { data, error } = await supabase
         .from('diary_entries')
-        .update(updates)
+        .update(updatesWithTimestamp)
         .eq('id', id)
         .select()
         .single()
