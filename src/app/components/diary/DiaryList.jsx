@@ -11,8 +11,8 @@ export default function DiaryList({ onEditEntry }) {
   useEffect(() => {
     if (user) {
       setCurrentUser(user)
-      fetchEntries(user.id)
-      const unsubscribe = subscribeToChanges(user.id)
+      fetchEntries(user.uid)
+      const unsubscribe = subscribeToChanges(user.uid)
       return () => unsubscribe()
     }
   }, [user, fetchEntries, subscribeToChanges, setCurrentUser])

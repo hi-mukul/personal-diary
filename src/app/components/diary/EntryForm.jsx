@@ -24,7 +24,7 @@ export default function EntryForm({ entry, onSuccess }) {
         title,
         content,
         tags,
-        user_id: user.id
+        user_id: user.uid
       }
 
       let result;

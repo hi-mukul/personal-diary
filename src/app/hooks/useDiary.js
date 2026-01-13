@@ -16,7 +16,7 @@ const useDiaryStore = create((set, get) => ({
     const { fetchEntries } = get()
     const user = get().currentUser
     if (user) {
-      fetchEntries(user.id)
+      fetchEntries(user.uid)
     }
   },
   setSelectedTags: (tags) => {
@@ -25,7 +25,7 @@ const useDiaryStore = create((set, get) => ({
     const { fetchEntries } = get()
     const user = get().currentUser
     if (user) {
-      fetchEntries(user.id)
+      fetchEntries(user.uid)
     }
   },
   setCurrentUser: (user) => set({ currentUser: user }),
@@ -53,10 +53,6 @@ const useDiaryStore = create((set, get) => ({
         const errorMsg = 'Permission denied. Please make sure you are logged in.'
         toast.error(errorMsg)
         set({ loading: false, error: 'PERMISSION_DENIED' })
-      } else if (error?.message?.includes('index')) {
-        const errorMsg = 'Database index required. Please contact the administrator.'
-        toast.error(errorMsg)
-        set({ loading: false, error: 'INDEX_REQUIRED' })
       } else {
         const errorMessage = error?.message || 'Unknown error occurred'
         toast.error(`Failed to fetch entries: ${errorMessage}`)

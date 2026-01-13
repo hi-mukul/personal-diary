@@ -23,9 +23,9 @@ export default function DatabaseDebug() {
       
       // Test 2: Try to fetch entries if user is authenticated
       if (user) {
-        console.log('Testing with authenticated user:', user.id);
+        console.log('Testing with authenticated user:', user.uid);
         try {
-          const entries = await diaryService.getEntries(user.id);
+          const entries = await diaryService.getEntries(user.uid);
           console.log('Entries fetched successfully:', entries);
           setTestResult({
             success: true,
