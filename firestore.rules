@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // DIARY ENTRIES COLLECTION RULES
+    // ============================================
+    match /diary_entries/{entryId} {
+      
+      // Helper function to check if user is authenticated
+      function isAuthenticated() {
+        return request.auth != null;
+      }
+      
+      // Helper function to check if user owns the document
+      function isOwner() {
+        return isAuthenticated() && request.auth.uid == resource.data.user_id;
+      }
+      
+      // Helper function to check if user is creating their own entry
+      function isCreatingOwnEntry() {
+        return isAuthenticated() && request.auth.uid == request.resource.data.user_id;
+      }
+      
+      // Helper function to validate entry data structure
+      function isValidEntry() {
+        let requiredFields = ['user_id', 'title', 'content'];
+        let allowedFields = ['user_id', 'title', 'content', 'mood', 'tags', 'created_at', 'updated_at', 'is_favorite'];
+        
+        return request.resource.data.keys().hasAll(requiredFields)
+            && request.resource.data.keys().hasOnly(allowedFields)
+            && request.resource.data.title is string
+            && request.resource.data.title.size() > 0
+            && request.resource.data.title.size() <= 200
+            && request.resource.data.content is string
+            && request.resource.data.user_id is string;
+      }
+      
+      // Helper function to validate update doesn't change user_id
+      function userIdUnchanged() {
+        return request.resource.data.user_id == resource.data.user_id;
+      }
+      
+      // READ: Users can only read their own entries
+      allow read: if isOwner();
+      
+      // CREATE: Users can only create entries for themselves with valid data
+      allow create: if isCreatingOwnEntry() && isValidEntry();
+      
+      // UPDATE: Users can only update their own entries, cannot change user_id
+      allow update: if isOwner() && userIdUnchanged();
+      
+      // DELETE: Users can only delete their own entries
+      allow delete: if isOwner();
+    }
+    
+    // ============================================
+    // USER PROFILES COLLECTION (Optional - for future use)
+    // ============================================
+    match /users/{userId} {
+      
+      // Users can only read and write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // DEFAULT: Deny all other access
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

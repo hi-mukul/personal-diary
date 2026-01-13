@@ -43,22 +43,20 @@ const useDiaryStore = create((set, get) => ({
       console.error('Fetch entries error:', error)
       console.error('Error details:', {
         code: error?.code,
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-        status: error?.status
+        message: error?.message
       })
 
-      // Check if it's a table not found error
-      if (error?.code === 'PGRST116' ||
-        error?.message?.includes('relation "diary_entries" does not exist') ||
-        error?.message?.includes('Could not find the table') ||
-        error?.message?.includes('schema cache') ||
-        error?.message?.includes('404') ||
-        error?.status === 404) {
-        const errorMsg = 'Database table not found. Please set up the database first.'
+      // Check if it's a permission or setup error
+      if (error?.code === 'permission-denied' ||
+        error?.message?.includes('Permission denied') ||
+        error?.message?.includes('permission-denied')) {
+        const errorMsg = 'Permission denied. Please make sure you are logged in.'
         toast.error(errorMsg)
-        set({ loading: false, error: 'DATABASE_NOT_SETUP' })
+        set({ loading: false, error: 'PERMISSION_DENIED' })
+      } else if (error?.message?.includes('index')) {
+        const errorMsg = 'Database index required. Please contact the administrator.'
+        toast.error(errorMsg)
+        set({ loading: false, error: 'INDEX_REQUIRED' })
       } else {
         const errorMessage = error?.message || 'Unknown error occurred'
         toast.error(`Failed to fetch entries: ${errorMessage}`)
@@ -118,20 +116,11 @@ const useDiaryStore = create((set, get) => ({
 
   subscribeToChanges: (userId) => {
     return diaryService.subscribeToChanges(userId, (payload) => {
-      if (payload.eventType === 'INSERT') {
-        set((state) => ({
-          entries: [payload.new, ...state.entries]
-        }))
-      } else if (payload.eventType === 'UPDATE') {
-        set((state) => ({
-          entries: state.entries.map((entry) =>
-            entry.id === payload.new.id ? payload.new : entry
-          )
-        }))
-      } else if (payload.eventType === 'DELETE') {
-        set((state) => ({
-          entries: state.entries.filter((entry) => entry.id !== payload.old.id)
-        }))
+      // Firebase realtime updates come as full entries array
+      if (payload.type === 'update' && payload.entries) {
+        set({ entries: payload.entries })
+      } else if (payload.type === 'error') {
+        console.error('Subscription error:', payload.error)
       }
     })
   }

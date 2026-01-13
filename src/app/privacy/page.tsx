@@ -148,7 +148,7 @@ export default function PrivacyPage() {
                   <div>
                     <h4 className="font-semibold text-white mb-2">Infrastructure</h4>
                     <p className="text-sm leading-relaxed">
-                      We use Supabase's secure, SOC 2 Type II compliant infrastructure with regular security audits
+                      We use Google Firebase's secure, SOC 2 Type II compliant infrastructure with regular security audits
                       and monitoring to protect against unauthorized access.
                     </p>
                   </div>
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
                   <div>
                     <h4 className="font-semibold text-white mb-2">Third-Party Services</h4>
                     <p className="text-sm leading-relaxed">
-                      We use trusted third-party services like Supabase for hosting and authentication.
+                      We use trusted third-party services like Google Firebase for hosting and authentication.
                       These services are bound by strict privacy agreements and cannot access your diary content.
                     </p>
                   </div>

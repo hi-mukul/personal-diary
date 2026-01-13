@@ -40,11 +40,8 @@ export default function AuthForm() {
           setIsSignUp(false)
           setError('')
         }, 3000)
-      } else if (error.message.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please check your credentials and try again.')
-      } else if (error.message.includes('Unable to connect to authentication service')) {
-        setError('Connection error: Unable to reach the authentication server. Please check your internet connection and try again.')
       } else {
+        // Error message is already user-friendly from AuthContext
         setError(error.message || 'An unexpected error occurred. Please try again.')
       }
     } finally {
@@ -58,10 +55,9 @@ export default function AuthForm() {
       await signInWithGoogle()
     } catch (error: any) {
       console.error(error)
-      if (error.message?.includes('Unable to connect to authentication service')) {
-        setError('Connection error: Unable to reach the authentication server. Please check your internet connection and try again.')
-      } else {
-        setError(error.message || 'Failed to sign in with Google. Please try again.')
+      // Error message is already user-friendly from AuthContext
+      if (error.message) {
+        setError(error.message)
       }
     } finally {
       setGoogleLoading(false)

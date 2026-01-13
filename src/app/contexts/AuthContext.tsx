@@ -2,18 +2,30 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabaseClient';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail,
+  updatePassword,
+  User,
+  AuthError
+} from 'firebase/auth';
+import { auth } from '../lib/firebaseClient';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
-  user: any;
+  user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
+  updateUserPassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -30,192 +42,163 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper function to get user-friendly error messages
+const getFirebaseErrorMessage = (error: AuthError): string => {
+  switch (error.code) {
+    case 'auth/email-already-in-use':
+      return 'This email is already registered. Please sign in instead.';
+    case 'auth/invalid-email':
+      return 'Invalid email address format.';
+    case 'auth/operation-not-allowed':
+      return 'Email/password accounts are not enabled. Please contact support.';
+    case 'auth/weak-password':
+      return 'Password is too weak. Please use at least 6 characters.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    case 'auth/user-not-found':
+      return 'No account found with this email. Please sign up first.';
+    case 'auth/wrong-password':
+      return 'Incorrect password. Please try again.';
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please check your credentials.';
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please try again later.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your internet connection.';
+    case 'auth/popup-closed-by-user':
+      return 'Sign-in popup was closed. Please try again.';
+    case 'auth/popup-blocked':
+      return 'Sign-in popup was blocked. Please allow popups for this site.';
+    case 'auth/requires-recent-login':
+      return 'Please sign in again to complete this action.';
+    default:
+      return error.message || 'An unexpected error occurred. Please try again.';
+  }
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
 
   useEffect(() => {
-    // Check active sessions
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error && !error.message?.includes('Failed to fetch')) {
-          console.error('Session check error:', error)
-        }
-        setUser(session?.user ?? null)
-        setLoading(false)
-      } catch (error: any) {
-        console.error('Session check failed:', error)
-        setUser(null)
-        setLoading(false)
-      }
-    }
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
 
-    checkSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
-        
-        if (event === 'SIGNED_IN') {
-          router.push('/')
-        } else if (event === 'SIGNED_OUT') {
-          router.push('/')
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [router])
+    return () => unsubscribe();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-      toast.success('Welcome back!')
-    } catch (error: any) {
-      // Handle network/connection errors
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        const networkError = 'Unable to connect to authentication service. Please check your internet connection and try again.'
-        toast.error(networkError)
-        throw new Error(networkError)
-      }
-      toast.error(error.message)
-      throw error
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success('Welcome back!');
+      router.push('/');
+    } catch (error) {
+      const message = getFirebaseErrorMessage(error as AuthError);
+      toast.error(message);
+      throw new Error(message);
     }
-  }
+  };
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      if (result.user) {
+        toast.success('Welcome to your personal diary!');
+        router.push('/');
+      }
+    } catch (error) {
+      const authError = error as AuthError;
+      const message = getFirebaseErrorMessage(authError);
 
-      if (error) {
-        // Handle specific error cases
-        if (error.message.includes('User already registered')) {
-          toast.error('This email is already registered. Please sign in instead.')
-          throw new Error('USER_EXISTS')
-        }
-        throw error
+      // Special handling for email already in use
+      if (authError.code === 'auth/email-already-in-use') {
+        toast.error('This email is already registered. Please sign in instead.');
+        throw new Error('USER_EXISTS');
       }
 
-      // Check if user needs email confirmation
-      if (data?.user && !data?.session) {
-        toast.success('Check your email for confirmation!')
-      } else if (data?.session) {
-        toast.success('Welcome to your personal diary!')
-      }
-    } catch (error: any) {
-      // Handle network/connection errors
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        const networkError = 'Unable to connect to authentication service. Please check your internet connection and try again.'
-        toast.error(networkError)
-        throw new Error(networkError)
-      }
-      if (error.message !== 'USER_EXISTS') {
-        toast.error(error.message)
-      }
-      throw error
+      toast.error(message);
+      throw new Error(message);
     }
-  }
+  };
 
   const signInWithGoogle = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-      if (error) throw error
-    } catch (error: any) {
-      // Handle network/connection errors
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        const networkError = 'Unable to connect to authentication service. Please check your internet connection and try again.'
-        toast.error(networkError)
-        throw new Error(networkError)
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+
+      await signInWithPopup(auth, provider);
+      toast.success('Welcome!');
+      router.push('/');
+    } catch (error) {
+      const authError = error as AuthError;
+      // Don't show error if user just closed the popup
+      if (authError.code === 'auth/popup-closed-by-user') {
+        return;
       }
-      toast.error(error.message)
-      throw error
+
+      const message = getFirebaseErrorMessage(authError);
+      toast.error(message);
+      throw new Error(message);
     }
-  }
+  };
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      toast.success('Signed out successfully')
-    } catch (error: any) {
-      // Handle network/connection errors
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        // For sign out, we can still proceed even if network fails
-        toast.success('Signed out successfully')
-        return
-      }
-      toast.error(error.message)
+      await firebaseSignOut(auth);
+      toast.success('Signed out successfully');
+      router.push('/');
+    } catch (error) {
+      const message = getFirebaseErrorMessage(error as AuthError);
+      toast.error(message);
+      throw new Error(message);
     }
-  }
+  };
 
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-      if (error) throw error
-      toast.success('Password reset email sent! Check your inbox.')
-    } catch (error: any) {
-      // Handle network/connection errors
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        const networkError = 'Unable to connect to authentication service. Please check your internet connection and try again.'
-        toast.error(networkError)
-        throw new Error(networkError)
-      }
-      toast.error(error.message)
-      throw error
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (error) {
+      const message = getFirebaseErrorMessage(error as AuthError);
+      toast.error(message);
+      throw new Error(message);
     }
-  }
+  };
 
-  const updatePassword = async (newPassword: string) => {
+  const updateUserPassword = async (newPassword: string) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      })
-      if (error) throw error
-      toast.success('Password updated successfully!')
-    } catch (error: any) {
-      // Handle network/connection errors
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        const networkError = 'Unable to connect to authentication service. Please check your internet connection and try again.'
-        toast.error(networkError)
-        throw new Error(networkError)
+      if (!user) {
+        throw new Error('No user logged in');
       }
-      toast.error(error.message)
-      throw error
+      await updatePassword(user, newPassword);
+      toast.success('Password updated successfully!');
+    } catch (error) {
+      const message = getFirebaseErrorMessage(error as AuthError);
+      toast.error(message);
+      throw new Error(message);
     }
-  }
+  };
 
   const value: AuthContextType = {
     user,
+    loading,
     signIn,
     signUp,
     signInWithGoogle,
     signOut,
     resetPassword,
-    updatePassword,
-    loading,
-  }
+    updateUserPassword
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};

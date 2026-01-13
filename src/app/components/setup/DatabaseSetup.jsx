@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { db } from '../../lib/firebaseClient';
+import { collection, getDocs, query, limit } from 'firebase/firestore';
 
 export default function DatabaseSetup() {
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const openSupabaseDashboard = () => {
-    window.open('https://supabase.com/dashboard', '_blank');
+  const openFirebaseConsole = () => {
+    window.open('https://console.firebase.google.com', '_blank');
   };
 
   const testConnection = async () => {
@@ -18,24 +19,23 @@ export default function DatabaseSetup() {
     setMessage('Testing database connection...');
 
     try {
-      const { data, error } = await supabase
-        .from('diary_entries')
-        .select('count', { count: 'exact', head: true });
-
-      if (error) {
-        if (error.message?.includes('does not exist') || error.message?.includes('schema cache')) {
-          setStatus('needs_setup');
-          setMessage('❌ Table does not exist. Click "Create Database Table" to set it up.');
-        } else {
-          throw error;
-        }
-      } else {
-        setStatus('success');
-        setMessage('✅ Database table exists and is accessible!');
-      }
+      // Try to query the diary_entries collection
+      const q = query(collection(db, 'diary_entries'), limit(1));
+      await getDocs(q);
+      
+      setStatus('success');
+      setMessage('✅ Firebase Firestore is connected and accessible!');
     } catch (error) {
-      setStatus('error');
-      setMessage(`❌ Connection test failed: ${error.message}`);
+      if (error.code === 'permission-denied') {
+        setStatus('needs_setup');
+        setMessage('⚠️ Firestore security rules need to be configured. Please update your Firebase security rules.');
+      } else if (error.message?.includes('offline')) {
+        setStatus('error');
+        setMessage('❌ Unable to connect to Firebase. Please check your internet connection.');
+      } else {
+        setStatus('error');
+        setMessage(`❌ Connection test failed: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ export default function DatabaseSetup() {
   return (
     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
       <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-4">
-        🛠️ Database Setup Tool
+        🛠️ Firebase Setup Tool
       </h3>
       
       <div className="space-y-4">
@@ -58,10 +58,10 @@ export default function DatabaseSetup() {
           </button>
 
           <button
-            onClick={openSupabaseDashboard}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+            onClick={openFirebaseConsole}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
           >
-            Open Supabase Dashboard
+            Open Firebase Console
           </button>
         </div>
 
@@ -77,22 +77,21 @@ export default function DatabaseSetup() {
         )}
 
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <p><strong>Manual Setup Instructions:</strong></p>
+          <p><strong>Firebase Setup Instructions:</strong></p>
           <ol className="list-decimal list-inside space-y-1">
-            <li>Click "Test Database" to check if the table exists</li>
-            <li>Click "Open Supabase Dashboard" to go to your project</li>
-            <li>Go to SQL Editor → New Query</li>
-            <li>Copy and paste the SQL from <code>database-setup.sql</code></li>
-            <li>Click "Run" to execute the SQL</li>
-            <li>Refresh this page after successful setup</li>
+            <li>Click "Open Firebase Console" to access your project</li>
+            <li>Go to Firestore Database → Create database</li>
+            <li>Choose "Start in production mode"</li>
+            <li>Go to Rules tab and update security rules</li>
+            <li>Enable Google Sign-In in Authentication → Sign-in method</li>
+            <li>Deploy rules from <code>firestore.rules</code> file</li>
           </ol>
         </div>
 
         <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm">
-          <p className="font-semibold mb-2">SQL to run in Supabase:</p>
+          <p className="font-semibold mb-2">Deploy security rules:</p>
           <code className="text-xs">
-            CREATE TABLE diary_entries (...)<br/>
-            -- See database-setup.sql for complete SQL
+            firebase deploy --only firestore:rules
           </code>
         </div>
       </div>

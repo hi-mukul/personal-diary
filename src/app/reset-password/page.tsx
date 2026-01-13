@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-// import { useAuth } from '../contexts/AuthContext' // Not needed for direct Supabase calls
-import { supabase } from '../lib/supabaseClient'
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth'
+import { auth } from '../lib/firebaseClient'
 import { FiLock, FiEye, FiEyeOff, FiCheck, FiBookOpen } from 'react-icons/fi'
 import { Button } from '../components/ui/moving-border'
 import FloatingParticles from '../components/ui/FloatingParticles'
@@ -18,76 +18,54 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string>('')
   const [success, setSuccess] = useState<boolean>(false)
   const [mounted, setMounted] = useState<boolean>(false)
-  const [sessionReady, setSessionReady] = useState<boolean>(false)
+  const [codeValid, setCodeValid] = useState<boolean>(false)
+  const [userEmail, setUserEmail] = useState<string>('')
 
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     setMounted(true)
 
-    // Listen for PASSWORD_RECOVERY event (primary method)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session ? 'Session exists' : 'No session')
+    // Get the oobCode from URL (Firebase password reset code)
+    const oobCode = searchParams.get('oobCode')
 
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('PASSWORD_RECOVERY event detected - user can now reset password')
-        setSessionReady(true)
-        setError('')
-      } else if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in - checking if this is a password recovery session')
-        setSessionReady(true)
-        setError('')
-      }
-    })
+    if (!oobCode) {
+      setError('Invalid password reset link. Please request a new one.')
+      return
+    }
 
-    // Also check for existing session on page load
-    const checkSession = async () => {
+    // Verify the password reset code
+    const verifyCode = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-
-        if (error) {
-          console.error('Error getting session:', error)
-          setError('Unable to verify reset link. Please try again.')
-          return
-        }
-
-        if (session) {
-          console.log('Existing session found')
-          setSessionReady(true)
-          setError('')
-        } else {
-          console.log('No existing session - waiting for PASSWORD_RECOVERY event')
-          // Don't set error immediately - wait for the auth state change event
-          setTimeout(() => {
-            // Only show error if still no session after 3 seconds
-            supabase.auth.getSession().then(({ data: { session } }) => {
-              if (!session) {
-                setError('Invalid or expired reset link. Please request a new password reset.')
-              }
-            })
-          }, 3000)
-        }
+        const email = await verifyPasswordResetCode(auth, oobCode)
+        setUserEmail(email)
+        setCodeValid(true)
+        console.log('Password reset code verified for:', email)
       } catch (error) {
-        console.error('Error checking session:', error)
-        setError('Unable to verify reset link. Please try again.')
+        const authError = error as { code?: string; message?: string }
+        console.error('Code verification error:', error)
+        if (authError.code === 'auth/expired-action-code') {
+          setError('This password reset link has expired. Please request a new one.')
+        } else if (authError.code === 'auth/invalid-action-code') {
+          setError('This password reset link is invalid or has already been used.')
+        } else {
+          setError('Unable to verify reset link. Please request a new one.')
+        }
       }
     }
 
-    checkSession()
-
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+    verifyCode()
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
 
-    // Check if component is mounted and session is ready
-    if (!mounted || !sessionReady) {
-      setError('Please wait for the page to load completely and try again.')
+    const oobCode = searchParams.get('oobCode')
+
+    if (!oobCode || !codeValid) {
+      setError('Invalid password reset session. Please request a new link.')
       return
     }
 
@@ -111,59 +89,32 @@ export default function ResetPasswordPage() {
     setLoading(true)
 
     try {
-      // Verify we have a valid session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      // Confirm the password reset with Firebase
+      await confirmPasswordReset(auth, oobCode, password)
 
-      if (sessionError) {
-        throw new Error('Unable to verify session: ' + sessionError.message)
-      }
+      console.log('Password updated successfully for:', userEmail)
+      setSuccess(true)
 
-      if (!session) {
-        setError('Your session has expired. Please request a new password reset link.')
-        setLoading(false)
-        return
-      }
+      // Redirect to sign-in page after 3 seconds
+      setTimeout(() => {
+        router.push('/')
+      }, 3000)
 
-      console.log('Updating password for user:', session.user.email)
-
-      // Update password using Supabase directly (most reliable method)
-      const { data, error } = await supabase.auth.updateUser({
-        password: password
-      })
-
-      if (error) {
-        throw error
-      }
-
-      if (data.user) {
-        console.log('Password updated successfully for user:', data.user.email)
-        setSuccess(true)
-
-        // Sign out the user to ensure they use the new password
-        await supabase.auth.signOut()
-
-        // Redirect to sign-in page after 3 seconds
-        setTimeout(() => {
-          router.push('/')
-        }, 3000)
-      } else {
-        throw new Error('Password update failed - no user data returned')
-      }
-
-    } catch (error: any) {
+    } catch (error) {
+      const authError = error as { code?: string; message?: string }
       console.error('Password update error:', error)
 
-      // Handle specific error cases
-      if (error.message?.includes('Failed to fetch') || error.name === 'AuthRetryableFetchError') {
-        setError('Unable to connect to authentication service. Please check your internet connection and try again.')
-      } else if (error.message?.includes('session') || error.message?.includes('Auth session missing')) {
-        setError('Your session has expired. Please request a new password reset link.')
-      } else if (error.message?.includes('Password should be')) {
-        setError('Password does not meet security requirements. Please choose a stronger password.')
-      } else if (error.message?.includes('Invalid')) {
-        setError('Invalid request. Please try requesting a new password reset link.')
+      // Handle specific Firebase error cases
+      if (authError.code === 'auth/expired-action-code') {
+        setError('This password reset link has expired. Please request a new one.')
+      } else if (authError.code === 'auth/invalid-action-code') {
+        setError('This password reset link is invalid or has already been used.')
+      } else if (authError.code === 'auth/weak-password') {
+        setError('Password is too weak. Please choose a stronger password.')
+      } else if (authError.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your internet connection and try again.')
       } else {
-        setError(error.message || 'Failed to update password. Please try again.')
+        setError(authError.message || 'Failed to update password. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -265,7 +216,7 @@ export default function ResetPasswordPage() {
         </motion.div>
 
         {/* Session Loading Indicator */}
-        {!sessionReady && !error && mounted && (
+        {!codeValid && !error && mounted && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -273,8 +224,21 @@ export default function ResetPasswordPage() {
           >
             <div className="inline-flex items-center space-x-2 text-purple-300">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
-              <span>Establishing secure session...</span>
+              <span>Verifying reset link...</span>
             </div>
+          </motion.div>
+        )}
+
+        {/* Show email being reset */}
+        {codeValid && userEmail && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl"
+          >
+            <p className="text-green-300 text-sm">
+              Resetting password for: <strong>{userEmail}</strong>
+            </p>
           </motion.div>
         )}
 
@@ -311,11 +275,11 @@ export default function ResetPasswordPage() {
           </motion.div>
         )}
 
-        {/* Form - Only show if no error and session is ready or being established */}
+        {/* Form - Only show if no error and code is valid */}
         {!error && (
           <motion.form
             onSubmit={handleSubmit}
-            className={`space-y-6 ${!sessionReady ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`space-y-6 ${!codeValid ? 'opacity-50 pointer-events-none' : ''}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
